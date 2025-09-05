@@ -2,7 +2,7 @@
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("testmode");
 
-  if (token !== "letmein123") {
+  if (token !== "sv") {
     console.warn("🛡️ OTP Mock not active — missing or wrong token.");
     return;
   }
