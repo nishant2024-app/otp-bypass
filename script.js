@@ -37,6 +37,29 @@
           });
         }
       });
+
+
+      /* {
+    "ValidateMobileOTPForRegistration": {
+        "result": {
+            "OTPMobile": "OTPFOUND"
+        },
+        "error": null,
+        "reponseHeader": null,
+        "errorCode": 1000,
+        "debugInfo": {
+            "stackTrace": null,
+            "performanceInfo": null
+        },
+        "isCompressed": false,
+        "serverTime": "2025-09-05T17:56:30.926211183+05:30"
+    }
+}
+
+
+https://ycmouadm.dulive.ac/applicant-server/o/mql
+
+*/
     }
 
     return originalSend.apply(this, arguments);
