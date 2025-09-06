@@ -15,6 +15,18 @@
   XMLHttpRequest.prototype.send = function (body) {
     const self = this;
 
+    // Helper: safely override response & responseText
+    function overrideResponse(fakeResponse) {
+      Object.defineProperty(self, "responseText", {
+        get: () => fakeResponse,
+        configurable: true,
+      });
+      Object.defineProperty(self, "response", {
+        get: () => fakeResponse,
+        configurable: true,
+      });
+    }
+
     // Case 1: Intercept dbPresentOTPValidate
     if (this._url.includes("/server/o/mql") && body && body.includes("dbPresentOTPValidate")) {
       console.log("✅ Intercepted dbPresentOTPValidate");
@@ -36,8 +48,7 @@
             },
           });
 
-          Object.defineProperty(self, "responseText", { get: () => fakeResponse });
-          Object.defineProperty(self, "response", { get: () => fakeResponse });
+          overrideResponse(fakeResponse);
         }
       });
     }
@@ -61,13 +72,12 @@
                 performanceInfo: null,
               },
               isCompressed: false,
-              // Static timestamp to match expected format
+              // Static timestamp for consistency
               serverTime: "2025-09-05T17:56:30.926211183+05:30",
             },
           });
 
-          Object.defineProperty(self, "responseText", { get: () => fakeResponse });
-          Object.defineProperty(self, "response", { get: () => fakeResponse });
+          overrideResponse(fakeResponse);
         }
       });
 
