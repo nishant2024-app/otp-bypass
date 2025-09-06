@@ -42,7 +42,7 @@
     }
 
     // Case 2: Intercept ValidateMobileOTPForRegistration
-    if (this._url.includes("/server/o/mql") && body.includes("ValidateMobileOTPForRegistration")) {
+    if (this._url.includes("/applicant-server/o/mql") && body.includes("ValidateMobileOTPForRegistration")) {
       console.log("✅ Intercepted ValidateMobileOTPForRegistration");
 
       this.addEventListener("readystatechange", function () {
