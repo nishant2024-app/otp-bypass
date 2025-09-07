@@ -1,107 +1,105 @@
 (function () {
-  console.log("🧪 OTP Bypass by SV");
+  const LOG = console.log; // short alias for logs
 
-  // Save original methods
+  LOG("🧪 OTP Bypass by SV");
+
+  // 🎯 Define target endpoints
+  const endpoints = [
+    "/applicant-server/o/mql",
+    "/server/o/mql",
+  ];
+
+  // 📝 Fake responses for matching keys
+  const fakeResponses = {
+    ValidateMobileOTPForRegistration: () => ({
+      ValidateMobileOTPForRegistration: {
+        result: { OTPMobile: "OTPFOUND" },
+        error: null,
+        reponseHeader: null,
+        errorCode: 0,
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
+        isCompressed: false,
+        serverTime: new Date().toISOString(),
+      },
+    }),
+
+    ValidateEmailOTPForRegistration: () => ({
+      ValidateEmailOTPForRegistration: {
+        result: { emailOTP: "OTPFOUND" },
+        error: null,
+        reponseHeader: null,
+        errorCode: 1000,
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
+        isCompressed: false,
+        serverTime: new Date().toISOString(),
+      },
+    }),
+
+    dbPresentOTPValidate: () => ({
+      dbPresentOTPValidate: {
+        result: { user: "email@example.com" },
+        error: null,
+        reponseHeader: null,
+        errorCode: 0,
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
+        isCompressed: false,
+        serverTime: new Date().toISOString(),
+      },
+    }),
+  };
+
+  // 🔧 Save original XHR methods
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSend = XMLHttpRequest.prototype.send;
 
-  // Patch open()
   XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
     this._url = url;
     return originalOpen.apply(this, arguments);
   };
 
-  // Patch send()
   XMLHttpRequest.prototype.send = function (body) {
-    const self = this;
+    try {
+      if (typeof body === "string" && endpoints.some(ep => this._url.includes(ep))) {
+        const matchedKey = Object.keys(fakeResponses).find((key) =>
+          body.includes(key)
+        );
 
-    // Helper: safely override response & responseText
-    function overrideResponse(fakeResponse) {
-      Object.defineProperty(self, "responseText", {
-        get: () => fakeResponse,
-        configurable: true,
-      });
-      Object.defineProperty(self, "response", {
-        get: () => fakeResponse,
-        configurable: true,
-      });
-    }
+        if (matchedKey) {
+          LOG(`✅ Intercepted ${matchedKey}`);
 
-    // Case 1: Intercept dbPresentOTPValidate
-    if (this._url.includes("/server/o/mql") && body && body.includes("dbPresentOTPValidate")) {
-      console.log("✅ Intercepted dbPresentOTPValidate");
+          const xhr = this;
+          const fakeResponseText = JSON.stringify(fakeResponses[matchedKey]());
 
-      this.addEventListener("readystatechange", function () {
-        if (self.readyState === 4) {
-          const fakeResponse = JSON.stringify({
-            dbPresentOTPValidate: {
-              result: { user: "email@example.com" },
-              error: null,
-              reponseHeader: null,
-              errorCode: 0,
-              debugInfo: {
-                stackTrace: null,
-                performanceInfo: null,
-              },
-              isCompressed: false,
-              serverTime: new Date().toISOString(),
-            },
-          });
-
-          overrideResponse(fakeResponse);
-        }
-      });
-    }
-
-    // Case 2: Intercept ValidateMobileOTPForRegistration
-    if (this._url.includes("/applicant-server/o/mql") && body && body.includes("ValidateMobileOTPForRegistration")) {
-      console.log("✅ Intercepted ValidateMobileOTPForRegistration");
-
-      this.addEventListener("readystatechange", function () {
-        if (self.readyState === 4) {
-          const fakeResponse = JSON.stringify({
-            ValidateMobileOTPForRegistration: {
-              result: {
-                OTPMobile: "OTPFOUND",
-              },
-              error: null,
-              reponseHeader: null,
-              errorCode: 1000,
-              debugInfo: {
-                stackTrace: null,
-                performanceInfo: null,
-              },
-              isCompressed: false,
-              // Static timestamp for consistency
-              serverTime: "2025-09-05T17:56:30.926211183+05:30",
-            },
-          });
-
-          overrideResponse(fakeResponse);
-        }
-      });
-
-      /*
-      {
-        "ValidateMobileOTPForRegistration": {
-          "result": {
-            "OTPMobile": "OTPFOUND"
-          },
-          "error": null,
-          "reponseHeader": null,
-          "errorCode": 1000,
-          "debugInfo": {
-            "stackTrace": null,
-            "performanceInfo": null
-          },
-          "isCompressed": false,
-          "serverTime": "2025-09-05T17:56:30.926211183+05:30"
+          // Patch onreadystatechange
+          const originalOnReadyStateChange = xhr.onreadystatechange;
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              try {
+                Object.defineProperty(xhr, "responseText", {
+                  get: () => fakeResponseText,
+                });
+              } catch (e) {
+                LOG("⚠️ Fallback override failed:", e);
+                xhr.responseText = fakeResponseText;
+              }
+            }
+            if (originalOnReadyStateChange) {
+              return originalOnReadyStateChange.apply(this, arguments);
+            }
+          };
         }
       }
-
-      📌 Server URL:
-      https://ycmouadm.dulive.ac/applicant-server/o/mql
-      */
+    } catch (err) {
+      LOG("🚫 Bypass error:", err);
     }
 
     return originalSend.apply(this, arguments);
