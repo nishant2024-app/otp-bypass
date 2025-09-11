@@ -6,6 +6,7 @@
   const endpoints = [
     "/applicant-server/o/mql",
     "/server/o/mql",
+    "/login-server/o/mql", // Added for password reset
   ];
 
   const fakeResponses = {
@@ -45,6 +46,22 @@
         error: null,
         reponseHeader: null,
         errorCode: 0,
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
+        isCompressed: false,
+        serverTime: new Date().toISOString(),
+      },
+    }),
+
+    // 🔐 New: OTP Verification for Password Reset
+    OtpVerificationForChangingPassword: () => ({
+      OtpVerificationForChangingPassword: {
+        result: { resetOTP: "OTPFOUND" },
+        error: null,
+        reponseHeader: null,
+        errorCode: 1000,
         debugInfo: {
           stackTrace: null,
           performanceInfo: null,
