@@ -86,8 +86,12 @@
   };
 
   // ========= 🧠 Automation Only for Specific Page =========
-  const REGISTRATION_URL = "https://sndtadm.dulive.ac/applicant/#/registration";
-  if (location.href !== REGISTRATION_URL) return;
+  // ========= 🧠 Automation Only for Specific Page =========
+const isOnAllowedPage =
+  (location.origin === "https://sndtadm.dulive.ac" || location.origin === "https://ycmouadm.dulive.ac") &&
+  location.hash === "#/registration";
+
+if (!isOnAllowedPage) return;
 
   // ==== User Prompts (email & mobile only) ====
   const email = prompt("📧 Enter your email:");
